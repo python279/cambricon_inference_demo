@@ -12,7 +12,7 @@ class AbsDeepLearningInference(ABC):
         """
 
     @abstractmethod
-    def quantification(self):
+    def quantification(self, dtype='int8'):
         """
         do quantification if chipset required
         """
