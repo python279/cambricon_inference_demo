@@ -6,6 +6,7 @@ import torch
 import numpy as np
 import torchvision.models as models
 import cv2
+from PIL import Image
 import logging
 from AbsDeepLearningInference import AbsDeepLearningInference
 
@@ -64,12 +65,15 @@ class TorchResnet50InferenceBase(AbsDeepLearningInference):
         logging.info("test inference result={}".format(self.inference(request)))
 
     def inference(self, request):
-        imgfile = request.get("data")
-        img = cv2.imread(imgfile)
+        image_file = request.get("data")
+        image = Image.open(image_file)
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        image = np.asarray(image)
 
         with torch.no_grad():
             # 推理数据预处理
-            input_img = self.image_transform(img)
+            input_img = self.image_transform(image)
 
             # 模型推理
             input_img = input_img.to(self.device)
