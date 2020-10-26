@@ -9,6 +9,7 @@ import cv2
 from PIL import Image
 import logging
 from AbsDeepLearningInference import AbsDeepLearningInference
+import tempfile
 
 USE_MLU = os.environ.get("USE_MLU", False)
 if USE_MLU:
@@ -125,7 +126,7 @@ class TorchResnet50InferenceOnMLU270(TorchResnet50InferenceBase):
             # 量化标志
             model = mlu_quantize.quantize_dynamic_mlu(
                 model,
-                {'iteration': 1, 'mean': mean, 'std': std, 'data_scale': 1.0, 'perchannel': True, 'use_avg': False, 'firstconv': True},
+                {'iteration': 1, 'mean': mean, 'std': std, 'data_scale': 1.0, 'perchannel': True, 'use_avg': False, 'firstconv': False},
                 dtype=dtype,
                 gen_quant=True)
 
@@ -135,9 +136,9 @@ class TorchResnet50InferenceOnMLU270(TorchResnet50InferenceBase):
             # 在CPU上运行模型进行量化
             out = model(input_img)
             out2 = self.softmax(out.cpu().numpy())
-            self.model_file = '/tmp/resnet50-{}.pth'.format(dtype)
+            self.model_file = tempfile.mktemp('.pth', 'resnet50-')
             torch.save(model.state_dict(), self.model_file)
-            logging.info("quantification success, saved quantification model file is ".format(self.model_file))
+            logging.info("quantification success, saved quantification model file is {}".format(self.model_file))
 
     def warm_up(self):
         test_img = cv2.imread(self.test_img)
@@ -160,7 +161,7 @@ class TorchResnet50InferenceOnMLU270(TorchResnet50InferenceBase):
                 self.model = torch.jit.trace(self.model, input_img, check_trace=False)
                 out = self.model(input_img)
                 out2 = self.softmax(out.cpu().numpy())
-                logging.info('fusion success, inference result={}'.format(out2))
+                logging.info('fusion success, inference result={}'.format(out2.argmax()))
 
         # 测试模型推理
         self.test()
