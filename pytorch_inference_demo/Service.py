@@ -10,6 +10,7 @@ import base64
 from io import BytesIO
 from flask import Flask, request, jsonify
 import TorchResnet50Inference
+from Profile import profile, enable_profile
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -28,6 +29,7 @@ def health():
 
 @app.route('/api/v1.0/predict', methods=['POST'])
 def predict():
+    @profile
     def _predict():
         try:
             j = request.get_json()
@@ -42,4 +44,5 @@ def predict():
 
 
 if __name__ == '__main__':
+    enable_profile()
     app.run(debug=False, host='0.0.0.0', port=5005)
